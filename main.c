@@ -1,10 +1,10 @@
 /*
  *  This program compares the output of a cpp program with the text provided in another file. Intended to aid in debugging vocareum test cases for matching output.
  *  The first character that doesn't match the correct output will be highlighted in red along with all preceeding characters.
- *  Usage: ./autocompare [executable] -args [commandline arguments] -test_cases [input file] [output file] -num [(optional) number of test cases, default=1]
+ *  Usage: ./autocompare [executable] -test_cases [input file] [output file] -num [(optional) number of test cases, default=1]
  *  NOTE: The input/output files can be specified with a '*' to denote the test case number.
  *  IMPORTANT: The '' or "" surrounding the * are necessary. 
- *  Example: ./autocompare a.out case'*' case'*'.correct 6
+ *  Example: ./autocompare a.out -test_cases case'*' case'*'.correct -num 6
  *  This will run a.out with the contents of case[1-6] and compare the program output with the content of case[1-6].correct
  */
 
@@ -32,12 +32,6 @@
 #define TERM_UNDERLINE_OFF 	"\033[24m"
 
 #define TERM_DEFAULT   		"\033[0m"
-
-const char *validArgs[] = {
-    "args",
-    "test_cases",
-    NULL
-};
 
 typedef struct {
     uint32_t len;
@@ -285,7 +279,7 @@ int compareAndPrint( char *str1, char *str2 ) {
 	int str2Len = strlen( str2 );   
 
     if( printIndex == str1Len && printIndex == str2Len ) {
-		printf( str1 );
+		printf( "%s", str1 );
 		printf( TERM_DEFAULT );
 		return firstBadCharacter;
     }
@@ -294,12 +288,12 @@ int compareAndPrint( char *str1, char *str2 ) {
 
     char *goodCharBuffer = calloc( printIndex+1, sizeof(char) );
 	strncpy( goodCharBuffer, str1, printIndex );
-    printf( goodCharBuffer );
+    printf( "%s", goodCharBuffer );
 
 	char *badCharBuffer = calloc( str1Len - printIndex + 1, sizeof(char) );
     strcpy( badCharBuffer, &str1[printIndex] );
     printf( TERM_RED );
-	printf( badCharBuffer );
+	printf( "%s", badCharBuffer );
 
 	free( goodCharBuffer );
 	free( badCharBuffer );
