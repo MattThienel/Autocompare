@@ -1,5 +1,7 @@
 ## Autocompare, Vocareum output debugging program
 
+**This only works on Linux or on Windows through WSL**
+
 This program compares the output of a cpp program with the text provided in another file. Intended to aid in debugging vocareum test cases for matching output.
 
 The first character that doesn't match the correct output will be highlighted in red along with all preceeding characters in that test.
@@ -8,7 +10,7 @@ The first character that doesn't match the correct output will be highlighted in
 
 **_NOTE:_ The input/output files can be specified with a '*' to denote the test case number.**
 
-**_IMPORTANT:_ When typing the '*' for case number generic you need to use single or double quotation surrounding it. Ex: '\*' or "\*". **
+**_IMPORTANT:_ When typing the '*' for case number generic you need to use single or double quotation surrounding it. Ex: '\*' or "\*".**
 
 ### Examples
 #### Building
@@ -16,9 +18,11 @@ The first character that doesn't match the correct output will be highlighted in
 ./build.sh
 
 sudo ./install.sh
+```
 
 or just build and move autocompare into your working directory
 
+```
 ./build.sh
 
 mv autocompare [working_directory]
