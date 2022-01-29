@@ -63,56 +63,71 @@ int main( int argc, char **argv ) {
         printf( "%s--------------------------------------------\nRunning Test %s%d%s\n--------------------------------------------\n%s", TERM_BLUE, TERM_YELLOW, i+1, TERM_BLUE, TERM_DEFAULT );
         memset( buffer, 0, 256 );
 
-		pid_t pid = 0;
-		int inpipefd[2];
-		int outpipefd[2];
-		int status;
+	pid_t pid = 0;
+	int inpipefd[2];
+	int outpipefd[2];
+	int status;
 
-		pipe(inpipefd);
-		pipe(outpipefd);
-		pid = fork();
-		if( pid == 0 ) { // Child
-			dup2( outpipefd[0], STDIN_FILENO );
-		    dup2( inpipefd[1], STDOUT_FILENO );
-		    dup2( inpipefd[1], STDERR_FILENO );
+	pipe(inpipefd);
+	pipe(outpipefd);
+	pid = fork();
+	if( pid == 0 ) { // Child
+		dup2( outpipefd[0], STDIN_FILENO );
+	    dup2( inpipefd[1], STDOUT_FILENO );
+	    dup2( inpipefd[1], STDERR_FILENO );
 
-	        // Ask kernel to deliver SIGTERM in case the parent dies
-		    prctl( PR_SET_PDEATHSIG, SIGTERM );
+	// Ask kernel to deliver SIGTERM in case the parent dies
+	    prctl( PR_SET_PDEATHSIG, SIGTERM );
 
-		    execl( argv[1], (char*) NULL );
-		    exit(1); // Should not be executed unless execl function was not successfull
-		}
+	    execl( argv[1], (char*) NULL );
+	    exit(1); // Should not be executed unless execl function was not successfull
+	}
 
-		// Close unused pipe ends
-		// Only need outpipefd[1] to write to child and inpipefd[0] to read from child
-		close( outpipefd[0] );
-		close( inpipefd[1] );
+	// Close unused pipe ends
+	// Only need outpipefd[1] to write to child and inpipefd[0] to read from child
+	close( outpipefd[0] );
+	close( inpipefd[1] );
 
-		FileBuffer inputFile = readEntireFile( testCases.inputFiles[i] );
-	    FileBuffer outputFile = readEntireFile( testCases.outputFiles[i] );
+	FileBuffer inputFile = readEntireFile( testCases.inputFiles[i] );
+    	FileBuffer outputFile = readEntireFile( testCases.outputFiles[i] );
 
-		write( outpipefd[1], inputFile.buffer, inputFile.len );
-		read( inpipefd[0], buffer, 256 );
-	
-		if( compareAndPrint( buffer, outputFile.buffer ) == -1 ) {
-			casesPassed[i] = 1;
-		}
+	write( outpipefd[1], inputFile.buffer, inputFile.len );
 
-        free( inputFile.buffer );
-		free( outputFile.buffer );
+	int fullBufferLen = 0;
+	int fullBufferMaxLen = 256;
+	char *fullBuffer = malloc( fullBufferMaxLen * sizeof(char) );
 
-		printf( TERM_GREEN );
-		//printf( "%s", buffer );
-		printf( TERM_DEFAULT );
+	ssize_t bytesRead = 0;
+ 	do {
+	    bytesRead = read( inpipefd[0], buffer, 256 );
+	    if( fullBufferLen + bytesRead > fullBufferMaxLen ) {
+		fullBufferMaxLen = fullBufferLen + bytesRead + 1;
+		fullBuffer = realloc( fullBuffer, fullBufferMaxLen ); 
+	    }
+	    strncpy( fullBuffer+fullBufferLen, buffer, bytesRead );
+	    fullBufferLen += bytesRead;
+	} while( bytesRead );
 
-		kill( pid, SIGKILL ); // Send SIGKILL signal to the child process
-		waitpid( pid, &status, 0 );
+
+	if( compareAndPrint( fullBuffer, outputFile.buffer ) == -1 ) {
+		casesPassed[i] = 1;
+	}
+
+	free( inputFile.buffer );
+	free( outputFile.buffer );
+
+	printf( TERM_GREEN );
+	//printf( "%s", buffer );
+	printf( TERM_DEFAULT );
+
+	kill( pid, SIGKILL ); // Send SIGKILL signal to the child process
+	waitpid( pid, &status, 0 );
     }
 	
 	printTestResults( casesPassed, testCases.fileCount );
 
     closeTestCaseFiles( &testCases );
-	free( casesPassed );
+    free( casesPassed );
     return 0;
 }
 
